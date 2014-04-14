@@ -53,7 +53,7 @@ tileAt floor {x, y} =
 renderFloor : Floor -> Element
 renderFloor f =
   let
-    pairs = concatMap (\y -> map ((,) y) [0..dimensions.x]) [0..dimensions.y]
+    pairs = concatMap (\x -> map ((,) x) [0..dimensions.y]) [0..dimensions.x]
     tiles = pairs
             |> map (\(x, y) -> {x=x, y=y})
             |> map (\pos -> case tileAt f pos of
