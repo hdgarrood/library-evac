@@ -8,19 +8,14 @@ colours = { tan=rgb 255 190 120, blue=rgb 12 100 200, red=red}
 
 data Player = Player (G.Positioned {})
 
+unplayer : Player -> G.Positioned {}
+unplayer (Player r) = r
+
 initialState : GameState
 initialState = {player = Player { x=0, y=0 }, floor = F.initialFloor}
 
 renderPlayer : Player -> Form
 renderPlayer player = filled colours.red (square F.tileSize)
-
-getCollageCoords : Player -> (Float, Float)
-getCollageCoords (Player {x,y}) =
-   let translate length = (\v -> v - (length - 1) `div` 2)
-       adjust length v = v |> translate length
-                           |> (\v -> v * F.tileSize)
-                           |> toFloat
-   in (adjust (.x F.dimensions) x, adjust (.y F.dimensions) y)
 
 type GameState = {floor:F.Floor, player:Player}
 type GameInput = {dir:G.Dir}
@@ -54,10 +49,14 @@ input =
 state : Signal GameState
 state = foldp step initialState input
 
-renderWorld state = collage (.x F.size) (.y F.size)
-  [ toForm <| F.renderFloor state.floor
-  , renderPlayer state.player |> move (getCollageCoords state.player)
-  , toForm <| asText state.player
-  ]
+renderWorld state =
+    let
+      p = unplayer state.player
+    in
+      collage (.x F.size) (.y F.size)
+        [ toForm <| F.renderFloor state.floor
+        , renderPlayer state.player |> move (F.getCollageCoords p)
+        , toForm <| asText state.player
+        ]
 
 main = renderWorld <~ state

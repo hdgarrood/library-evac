@@ -6,12 +6,12 @@ import Geometry as G
 data FloorTile = Floor | Space
 type Floor = [[FloorTile]]
 
-tileSize = 32
-
 -- Should both be odd (for now)
 dimensions : { x:Int, y:Int }
 dimensions = { x=29, y=19 }
 
+-- In pixels; for rendering
+tileSize = 32
 size = { x = dimensions.x * tileSize, y = dimensions.y * tileSize }
 
 initialFloor : Floor
@@ -52,21 +52,36 @@ tileAt floor {x, y} =
 -- RENDERING
 renderFloor : Floor -> Element
 renderFloor f =
-  let cols = f
-  in  flow right (map renderCol cols)
+  let
+    pairs = concatMap (\y -> map ((,) y) [0..dimensions.x]) [0..dimensions.y]
+    tiles = pairs
+            |> map (\(x, y) -> {x=x, y=y})
+            |> map (\pos -> case tileAt f pos of
+                                Just t -> Just (pos, t)
+                                Nothing -> Nothing)
+            |> justs
+    forms = concatMap toForms tiles
+  in collage size.x size.y forms
 
-renderCol : [FloorTile] -> Element
-renderCol col = flow down (map toElement col)
+-- This implementation requires the floor dimensions to be odd.
+getCollageCoords : G.Positioned a -> (Float, Float)
+getCollageCoords {x,y} =
+   let translate length = (\v -> v - (length - 1) `div` 2)
+       adjust length v = v |> translate length
+                           |> (\v -> v * tileSize)
+                           |> toFloat
+   in (adjust dimensions.x x, adjust dimensions.y y)
 
-toElement : FloorTile -> Element
-toElement tile =
+toForms : (G.Positioned a, FloorTile) -> [Form]
+toForms (pos, tile) =
     let
       sh = square tileSize
-      f fill outline =
-        collage tileSize tileSize
+      forms fill outline =
         [ sh |> filled fill
         , sh |> outlined (solid outline)
         ]
+      f fill outline = forms fill outline
+                        |> map (move <| getCollageCoords pos)
     in
       case tile of
         Floor -> f orange blue
