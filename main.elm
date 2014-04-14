@@ -35,7 +35,8 @@ type Floor = [[FloorTile]]
 floor : Floor
 floor = repeat floorDimensions.x (repeat floorDimensions.y Floor)
 
-data Player = Player (Positioned {})
+data Player = Player (Positioned {}) Movement
+type Movement = Stationary | Moving { dir:Dir, remaining:Time }
 
 initialPlayer : Player
 initialPlayer = Player { x=0, y=0 }
