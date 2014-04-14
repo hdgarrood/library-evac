@@ -35,8 +35,7 @@ type Floor = [[FloorTile]]
 floor : Floor
 floor = repeat floorDimensions.x (repeat floorDimensions.y Floor)
 
-data Player = Player (Positioned {}) Movement
-type Movement = Stationary | Moving { dir:Dir, progress:Float }
+data Player = Player (Positioned {})
 
 initialPlayer : Player
 initialPlayer = Player { x=0, y=0 }
@@ -76,20 +75,24 @@ moveDir dir pos = toPositioned dir `vecAdd` pos
 step : Dir -> Player -> Player
 step input (Player rec) = Player <| moveDir input rec
 
-step' : Maybe Dir -> Player -> Player
-step' mdir p = case mdir of
-    Just dir -> step dir p
-    Nothing  -> p
-
-input : Signal (Maybe Dir)
-input = keepIf isJust (Just Right) (fromPositioned <~ Keyboard.arrows)
+input : Signal Dir
+input =
+    let f dir keyCode =
+        (\_ -> dir) <~ keepIf id True (Keyboard.isDown keyCode)
+    in merges
+        [ f Up 38
+        , f Down 40
+        , f Right 39
+        , f Left 37
+        ]
 
 sPlayer : Signal Player
-sPlayer = foldp step' initialPlayer input
+sPlayer = foldp step initialPlayer input
 
 renderWorld player = collage floorSize.x floorSize.y
   [ toForm <| renderFloor floor
   , renderPlayer player |> move (getCollageCoords player)
+  , toForm <| asText player
   ]
 
 main = renderWorld <~ sPlayer
