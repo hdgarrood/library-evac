@@ -78,6 +78,10 @@ toForms (pos, tile) =
       forms path = [ toForm <| image tileSize tileSize path ]
       f path = forms path |> map (move <| getCollageCoords pos)
     in
-      case tile of
-        Floor -> f "/img/carpet.png"
-        Space -> f "/img/books.png"
+      f <| imgUrlFor tile
+
+imgUrlFor : FloorTile -> String
+imgUrlFor tile =
+  case tile of
+    Floor -> f "img/carpet.png"
+    Space -> f "img/books.png"
