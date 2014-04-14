@@ -23,14 +23,14 @@ type GameInput = {dir:G.Dir}
 step : GameInput -> GameState -> GameState
 step {dir} {floor, player} =
     if canMove floor player dir
-      then case player of
-        Player rec -> {floor = floor, player = Player <| G.moveDir dir rec}
+      then {floor = floor, player = Player <| G.moveDir dir (unplayer player)}
       else {floor = floor, player = player}
 
 
 canMove : F.Floor -> Player -> G.Dir -> Bool
-canMove floor (Player pos) dir =
+canMove floor player dir =
     let
+      pos = unplayer player
       newpos = G.moveDir dir pos
     in
       F.occupiableAt floor newpos

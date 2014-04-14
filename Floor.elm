@@ -75,14 +75,9 @@ getCollageCoords {x,y} =
 toForms : (G.Positioned a, FloorTile) -> [Form]
 toForms (pos, tile) =
     let
-      sh = square tileSize
-      forms fill outline =
-        [ sh |> filled fill
-        , sh |> outlined (solid outline)
-        ]
-      f fill outline = forms fill outline
-                        |> map (move <| getCollageCoords pos)
+      forms path = [ toForm <| image tileSize tileSize path ]
+      f path = forms path |> map (move <| getCollageCoords pos)
     in
       case tile of
-        Floor -> f orange blue
-        Space -> f black white
+        Floor -> f "/img/carpet.png"
+        Space -> f "/img/books.png"
