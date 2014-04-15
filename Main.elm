@@ -28,7 +28,6 @@ renderWorld state =
       collage (.x F.size) (.y F.size)
         [ state.floors |> E.current |> F.renderFloor |> toForm
         , renderPlayer state.player |> move (F.getCollageCoords p)
-        , toForm <| asText state.player
         ]
 
 main = renderWorld <~ state input
