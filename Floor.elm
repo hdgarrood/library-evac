@@ -1,7 +1,7 @@
 module Floor where
 
-import Extra ((!!), Z)
 import Types (..)
+import Extra ((!!), Z, advance, retreat)
 import Geometry as G
 
 -- Should both be odd (for now)
@@ -20,11 +20,14 @@ groundFloor =
       y = 9
       height = 4
       fullCol = repeat dimensions.y Normal
+      colWithStairs = repeat 3 Normal ++
+                        [Stairs Upwards] ++
+                        repeat (dimensions.y - 4) Normal
       colWithObstacle = repeat y Normal ++
                         repeat height Inaccessible ++
                         repeat (dimensions.y - height - y) Normal
 
-      cols1 = repeat x fullCol
+      cols1 = fullCol :: colWithStairs :: repeat (x-2) fullCol
       cols2 = repeat width colWithObstacle
       cols3 = repeat (dimensions.x - x - width) fullCol
     in
@@ -38,11 +41,14 @@ firstFloor =
       y = 12
       height = 4
       fullCol = repeat dimensions.y Normal
+      colWithStairs = repeat 3 Normal ++
+                        [Stairs Downwards] ++
+                        repeat (dimensions.y - 4) Normal
       colWithObstacle = repeat y Normal ++
                         repeat height Inaccessible ++
                         repeat (dimensions.y - height - y) Normal
 
-      cols1 = repeat x fullCol
+      cols1 = fullCol :: colWithStairs :: repeat (x-2) fullCol
       cols2 = repeat width colWithObstacle
       cols3 = repeat (dimensions.x - x - width) fullCol
     in
@@ -111,4 +117,18 @@ onLeave : FloorTile -> GameState -> GameState
 onLeave _ state = state
 
 onEnter : FloorTile -> GameState -> GameState
-onEnter _ state = state
+onEnter tile state =
+    case tile of
+      Stairs dir -> takeStairs dir state
+      _          -> state
+
+takeStairs : StairsDir -> GameState -> GameState
+takeStairs dir state =
+    let
+      f = case dir of
+        Upwards   -> advance
+        Downwards -> retreat
+    in
+      case f state.floors of
+        Just floors' -> { state | floors <- floors' }
+        Nothing      -> state

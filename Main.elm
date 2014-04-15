@@ -9,13 +9,13 @@ import GameState (state)
 
 input : Signal GameInput
 input =
-    let f dir keyCode =
+    let tr keyCode dir =
         (\_ -> {dir=dir}) <~ keepIf id True (Keyboard.isDown keyCode)
     in merges
-        [ f Up 38
-        , f Down 40
-        , f Right 39
-        , f Left 37
+        [ tr 38 Up
+        , tr 40 Down
+        , tr 39 Right
+        , tr 37 Left
         ]
 
 renderPlayer : Player -> Form
