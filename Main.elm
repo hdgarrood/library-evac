@@ -23,7 +23,7 @@ input =
         ]
 
 renderPlayer : Player -> Form
-renderPlayer player = filled red (square F.tileSize)
+renderPlayer player = toForm <| image F.tileSize F.tileSize "img/player.png"
 
 renderWorld state =
     let
@@ -32,7 +32,7 @@ renderWorld state =
         collage (.x F.size) (.y F.size)
           [ state |> GS.currentFloor |> F.renderFloor |> toForm
           , renderPlayer state.player |> move (F.getCollageCoords p)
-          , toForm <| asText <| .label <| GS.currentFloor <| state
+          , toForm <| plainText <| .label <| GS.currentFloor <| state
           ]
       transition = GS.getTransitionOverlay state
     in
