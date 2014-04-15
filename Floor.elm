@@ -3,6 +3,7 @@ module Floor where
 import Types (..)
 import Extra ((!!), Z, advance, retreat)
 import Geometry as G
+import Dict as D
 
 -- Should both be odd (for now)
 dimensions : { x:Int, y:Int }
@@ -31,7 +32,7 @@ groundFloor =
       cols2 = repeat width colWithObstacle
       cols3 = repeat (dimensions.x - x - width) fullCol
     in
-      { label = "G", tiles = cols1 ++ cols2 ++ cols3, objects = [] }
+      { label = "G", tiles = cols1 ++ cols2 ++ cols3, objects = D.empty }
 
 firstFloor : Floor
 firstFloor =
@@ -52,7 +53,7 @@ firstFloor =
       cols2 = repeat width colWithObstacle
       cols3 = repeat (dimensions.x - x - width) fullCol
     in
-      { label = "1", tiles = cols1 ++ cols2 ++ cols3, objects = [] }
+      { label = "1", tiles = cols1 ++ cols2 ++ cols3, objects = D.empty }
 
 initialFloors = Z [] groundFloor [firstFloor]
 

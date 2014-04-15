@@ -18,6 +18,12 @@ current (Z _ x _) = x
 setCurrent : Zipper a -> a -> Zipper a
 setCurrent (Z preds _ succs) z = Z preds z succs
 
+zmap : (a -> b) -> Zipper a -> Zipper b
+zmap f (Z preds x succs) = Z (map f preds) (f x) (map f succs)
+
+values : Zipper a -> [a]
+values (Z preds x succs) = x :: preds ++ succs
+
 (!!) : [a] -> Int -> Maybe a
 xs !! i = case xs of
     (hd::tl) -> if | i < 0 -> Nothing

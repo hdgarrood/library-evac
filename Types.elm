@@ -1,5 +1,7 @@
 module Types where
 
+import Dict (Dict)
+
 data Zipper a = Z [a] a [a]
 
 type Positioned a = { a | x:Int, y:Int }
@@ -8,8 +10,18 @@ data Player = Player (Positioned {})
 data Dir = Left | Right | Up | Down
 data FloorTile = Normal | Inaccessible | Stairs StairsDir
 data StairsDir = Upwards | Downwards
-type Object = Positioned {}
-type Floor = { tiles : [[FloorTile]], objects : [Object], label : String }
+
+type Object = Positioned {typ : ObjectType, stepped : Bool}
+data ObjectType = Fire FireIntensity | Person
+data FireIntensity = I0 | I1 | I2 | I3 | I4 | I5
+
+type Floor = { tiles : [[FloorTile]]
+             , objects : Dict ObjectId Object
+             , floorId : FloorId
+             }
+
+type ObjectId = Int
+type FloorId = String
 
 type Transition = { reason : TransitionReason
                   , performed : Bool

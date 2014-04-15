@@ -36,7 +36,8 @@ step input state =
         TimeStep delta -> stepTransition delta state
         _ -> state
       else case input of
-        Move dir -> state |> preMoveHooks input
+        Move dir -> state |> updateObjects
+                          |> preMoveHooks input
                           |> movePlayer dir
                           |> postMoveHooks input
         _ -> state
@@ -127,6 +128,35 @@ canMove floor player dir =
       newpos = G.moveDir dir pos
     in
       F.occupiableAt floor newpos
+
+stepObjects : GameState -> GameState
+stepObjects state =
+    let
+      -- possible performance opportunity here
+      next = getUnsteppedObject state
+    in
+      case next of
+        Just (floorId, objId) -> stepObjects (stepObject state floorId objId)
+        Nothing               -> state
+
+getUnsteppedObject : GameState -> Maybe (FloorId, ObjectId)
+getUnsteppedObject state =
+    let
+      floorIds = getFloorIds state
+    in
+      case concatMap (getUnsteppedObjects state) floorIds of
+        x::_ -> Just x
+        []   -> Nothing
+
+getFloorIds : GameState -> [FloorId]
+getFloorIds state =
+    E.values state.floors |> map .floorId
+
+getUnsteppedObjects : GameState -> FloorId -> [(FloorId, ObjectId)]
+getUnsteppedObjects state floorId =
+
+stepObject : GameState -> FloorId -> ObjectId -> GameState
+stepObject state floorId objId = state
 
 makeState : Signal GameInput -> Signal GameState
 makeState input = foldp step initialState input
