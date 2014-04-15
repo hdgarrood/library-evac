@@ -1,10 +1,13 @@
 module GameState where
 
-import Extra as E
 import Player (Player, unplayer)
 import Geometry as G
 import Floor as F
+import ListExtra (safeHead)
 import Types (..)
+import Dict
+import DictExtra as Dict
+import Zipper
 
 initialState : GameState
 initialState = { player = Player { x=0, y=0 }
@@ -36,7 +39,7 @@ step input state =
         TimeStep delta -> stepTransition delta state
         _ -> state
       else case input of
-        Move dir -> state |> updateObjects
+        Move dir -> state |> stepObjects
                           |> preMoveHooks input
                           |> movePlayer dir
                           |> postMoveHooks input
@@ -77,15 +80,15 @@ updateForReason reason state = case reason of
     UsingStairs dir ->
       let
         f = case dir of
-          Upwards   -> E.advance
-          Downwards -> E.retreat
+          Upwards   -> Zipper.advance
+          Downwards -> Zipper.retreat
       in
         case f state.floors of
           Just floors' -> { state | floors <- floors' }
           Nothing      -> state
 
 currentFloor : GameState -> Floor
-currentFloor state = E.current state.floors
+currentFloor state = Zipper.current state.floors
 
 movePlayer : Dir -> GameState -> GameState
 movePlayer dir state =
@@ -150,10 +153,21 @@ getUnsteppedObject state =
 
 getFloorIds : GameState -> [FloorId]
 getFloorIds state =
-    E.values state.floors |> map .floorId
+    Zipper.values state.floors |> map .floorId
+
+getFloorById : GameState -> FloorId -> Maybe Floor
+getFloorById state floorId =
+    Zipper.values state.floors |> filter (\f -> f.floorId == floorId)
+                               |> safeHead
 
 getUnsteppedObjects : GameState -> FloorId -> [(FloorId, ObjectId)]
 getUnsteppedObjects state floorId =
+    case getFloorById state floorId of
+      Just {tiles, objects, floorId} ->
+        objects |> Dict.filter (not . .stepped)
+                |> Dict.keys
+                |> map (\objId -> (floorId, objId))
+      Nothing -> []
 
 stepObject : GameState -> FloorId -> ObjectId -> GameState
 stepObject state floorId objId = state

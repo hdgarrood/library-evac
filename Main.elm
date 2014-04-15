@@ -3,7 +3,6 @@ module Main where
 import Keyboard
 import Types (..)
 import Player (unplayer)
-import Extra as E
 import Floor as F
 import GameState as GS
 
@@ -32,7 +31,7 @@ renderWorld state =
         collage (.x F.size) (.y F.size)
           [ state |> GS.currentFloor |> F.renderFloor |> toForm
           , renderPlayer state.player |> move (F.getCollageCoords p)
-          , toForm <| plainText <| .label <| GS.currentFloor <| state
+          , toForm <| plainText <| .floorId <| GS.currentFloor <| state
           ]
       transition = GS.getTransitionOverlay state
     in

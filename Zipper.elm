@@ -1,6 +1,6 @@
-module Extra where
+module Zipper where
 
-import Types (..)
+data Zipper a = Z [a] a [a]
 
 advance : Zipper a -> Maybe (Zipper a)
 advance (Z preds x succs) = case succs of
@@ -23,10 +23,3 @@ zmap f (Z preds x succs) = Z (map f preds) (f x) (map f succs)
 
 values : Zipper a -> [a]
 values (Z preds x succs) = x :: preds ++ succs
-
-(!!) : [a] -> Int -> Maybe a
-xs !! i = case xs of
-    (hd::tl) -> if | i < 0 -> Nothing
-                   | i == 0 -> Just hd
-                   | otherwise -> tl !! (i - 1)
-    []       -> Nothing

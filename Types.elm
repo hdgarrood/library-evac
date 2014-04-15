@@ -1,8 +1,7 @@
 module Types where
 
 import Dict (Dict)
-
-data Zipper a = Z [a] a [a]
+import Zipper (Zipper)
 
 type Positioned a = { a | x:Int, y:Int }
 data Player = Player (Positioned {})
