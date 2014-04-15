@@ -1,6 +1,6 @@
 module Extra where
 
-data Zipper a = Z [a] a [a]
+import Types (..)
 
 advance : Zipper a -> Maybe (Zipper a)
 advance (Z preds x succs) = case succs of

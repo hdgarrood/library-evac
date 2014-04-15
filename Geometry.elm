@@ -1,8 +1,6 @@
 module Geometry where
 
-data Dir = Left | Right | Up | Down
-
-type Positioned a = { a | x:Int, y:Int }
+import Types (..)
 
 toPositioned : Dir -> Positioned {}
 toPositioned d = case d of

@@ -1,13 +1,8 @@
 module Floor where
 
 import Extra ((!!), Z)
+import Types (..)
 import Geometry as G
-
-data FloorTile = Normal | Inaccessible | Stairs StairsDir
-data StairsDir = Upwards | Downwards
-data Object = Positioned {}
-
-type Floor = { tiles : [[FloorTile]], objects : [Object] }
 
 -- Should both be odd (for now)
 dimensions : { x:Int, y:Int }
@@ -35,7 +30,25 @@ groundFloor =
     in
       { tiles = cols1 ++ cols2 ++ cols3, objects = [] }
 
-initialFloors = Z [] groundFloor []
+firstFloor : Floor
+firstFloor =
+    let
+      x = 23
+      width = 4
+      y = 12
+      height = 4
+      fullCol = repeat dimensions.y Normal
+      colWithObstacle = repeat y Normal ++
+                        repeat height Inaccessible ++
+                        repeat (dimensions.y - height - y) Normal
+
+      cols1 = repeat x fullCol
+      cols2 = repeat width colWithObstacle
+      cols3 = repeat (dimensions.x - x - width) fullCol
+    in
+      { tiles = cols1 ++ cols2 ++ cols3, objects = [] }
+
+initialFloors = Z [] groundFloor [firstFloor]
 
 occupiable : FloorTile -> Bool
 occupiable t = case t of
@@ -43,13 +56,13 @@ occupiable t = case t of
     Inaccessible -> False
     Stairs _     -> True
 
-occupiableAt : Floor -> G.Positioned a -> Bool
+occupiableAt : Floor -> Positioned a -> Bool
 occupiableAt floor pos =
     case tileAt floor pos of
       Just t -> occupiable t
       Nothing -> False
 
-tileAt : Floor -> G.Positioned a -> Maybe FloorTile
+tileAt : Floor -> Positioned a -> Maybe FloorTile
 tileAt {tiles, objects} {x, y} =
     case tiles !! x of
       Just xs -> xs !! y
@@ -70,7 +83,7 @@ renderFloor f =
   in collage size.x size.y forms
 
 -- This implementation requires the floor dimensions to be odd.
-getCollageCoords : G.Positioned a -> (Float, Float)
+getCollageCoords : Positioned a -> (Float, Float)
 getCollageCoords {x,y} =
    let translate length = (\v -> v - (length - 1) `div` 2)
        adjust length v = v |> translate length
@@ -78,7 +91,7 @@ getCollageCoords {x,y} =
                            |> toFloat
    in (adjust dimensions.x x, adjust dimensions.y y)
 
-toForms : (G.Positioned a, FloorTile) -> [Form]
+toForms : (Positioned a, FloorTile) -> [Form]
 toForms (pos, tile) =
     let
       forms path = [ toForm <| image tileSize tileSize path ]
@@ -93,3 +106,9 @@ imgPathFor tile =
     Inaccessible     -> "img/books.png"
     Stairs Upwards   -> "img/stairs-up.png"
     Stairs Downwards -> "img/stairs-down.png"
+
+onLeave : FloorTile -> GameState -> GameState
+onLeave _ state = state
+
+onEnter : FloorTile -> GameState -> GameState
+onEnter _ state = state
