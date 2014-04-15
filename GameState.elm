@@ -3,16 +3,19 @@ module GameState where
 import Player (Player, unplayer)
 import Geometry as G
 import Floor as F
-import ListExtra (safeHead)
 import Types (..)
+import ListExtra (safeHead)
 import Dict
 import DictExtra as Dict
 import Zipper
+import Pseudorandom
+import Pseudorandom (Random, randomInts, randomFloats, pure, (>>=))
 
 initialState : GameState
 initialState = { player = Player { x=0, y=0 }
                , floors = F.initialFloors
                , transition = Nothing
+               , randomState = 0
                }
 
 inTransition : GameState -> Bool
@@ -39,11 +42,19 @@ step input state =
         TimeStep delta -> stepTransition delta state
         _ -> state
       else case input of
-        Move dir -> state |> stepObjects
-                          |> preMoveHooks input
-                          |> movePlayer dir
-                          |> postMoveHooks input
+        SetRandomSeed seed ->
+          { state | randomState <- seed }
+        Move dir ->
+          state |> doRandom stepObjects
+                |> preMoveHooks input
+                |> movePlayer dir
+                |> postMoveHooks input
         _ -> state
+
+-- Perform a computation requiring randomness on the game state.
+doRandom : (GameState -> Random GameState) -> GameState -> GameState
+doRandom f state = case f state state.randomState of
+    (gs, s) -> { gs | randomState <- s }
 
 transitionLength = 1.0
 
@@ -132,15 +143,15 @@ canMove floor player dir =
     in
       F.occupiableAt floor newpos
 
-stepObjects : GameState -> GameState
+stepObjects : GameState -> Random GameState
 stepObjects state =
     let
       -- possible performance opportunity here
       next = getUnsteppedObject state
     in
       case next of
-        Just (floorId, objId) -> stepObjects (stepObject state floorId objId)
-        Nothing               -> state
+        Just (floorId, objId) -> stepObject state floorId objId >>= stepObjects
+        Nothing               -> pure state
 
 getUnsteppedObject : GameState -> Maybe (FloorId, ObjectId)
 getUnsteppedObject state =
@@ -160,6 +171,16 @@ getFloorById state floorId =
     Zipper.values state.floors |> filter (\f -> f.floorId == floorId)
                                |> safeHead
 
+getObjectById : GameState -> ObjectId -> Maybe Object
+getObjectById state objId =
+    let l x = case x of
+                Just y  -> [y]
+                Nothing -> []
+    in
+      Zipper.values state.floors
+        |> concatMap (\f -> f.objects |> Dict.lookup objId |> l)
+        |> safeHead
+
 getUnsteppedObjects : GameState -> FloorId -> [(FloorId, ObjectId)]
 getUnsteppedObjects state floorId =
     case getFloorById state floorId of
@@ -169,8 +190,32 @@ getUnsteppedObjects state floorId =
                 |> map (\objId -> (floorId, objId))
       Nothing -> []
 
-stepObject : GameState -> FloorId -> ObjectId -> GameState
-stepObject state floorId objId = state
+stepObject : GameState -> FloorId -> ObjectId -> Random GameState
+stepObject state floorId objId =
+    case getObjectById state objId of
+      Just obj -> case obj.typ of
+        Fire _ -> stepFireObject state floorId obj
+        Person -> stepPersonObject state floorId obj
+      Nothing -> pure state
+
+fmap : (a -> b) -> Random a -> Random b
+fmap f rand = (\(r, s) -> (f r, s)) . rand
+
+randomInt : Random Int
+randomInt = fmap head <| randomInts 1
+
+randomFloat : Random Float
+randomFloat = fmap head <| randomFloats 1
+
+stepFireObject : GameState -> FloorId -> Object -> Random GameState
+stepFireObject state floorId obj =
+  let
+    f _ = state -- TODO
+  in
+    fmap f randomInt
+
+-- TODO
+stepPersonObject = stepFireObject
 
 makeState : Signal GameInput -> Signal GameState
 makeState input = foldp step initialState input

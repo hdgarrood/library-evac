@@ -5,16 +5,21 @@ import Types (..)
 import Player (unplayer)
 import Floor as F
 import GameState as GS
+import Random
 
 state : Signal GameState
 state = GS.makeState input
+
+maxInt = 2147483647
+minInt = -2147483648
 
 input : Signal GameInput
 input =
     let tr keyCode dir =
         (\_ -> Move dir) <~ keepIf id True (Keyboard.isDown keyCode)
     in merges
-        [ TimeStep <~ fps 12
+        [ SetRandomSeed <~ Random.range minInt maxInt (every (10 * second))
+        , TimeStep <~ fps 12
         , tr 38 Up
         , tr 40 Down
         , tr 39 Right
@@ -31,7 +36,7 @@ renderWorld state =
         collage (.x F.size) (.y F.size)
           [ state |> GS.currentFloor |> F.renderFloor |> toForm
           , renderPlayer state.player |> move (F.getCollageCoords p)
-          , toForm <| plainText <| .floorId <| GS.currentFloor <| state
+          , state.randomState |> asText |> toForm |> move (20, 20)
           ]
       transition = GS.getTransitionOverlay state
     in

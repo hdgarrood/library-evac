@@ -12,10 +12,12 @@ data StairsDir = Upwards | Downwards
 
 type Object = Positioned {typ : ObjectType, stepped : Bool}
 data ObjectType = Fire FireIntensity | Person
-data FireIntensity = I0 | I1 | I2 | I3 | I4 | I5
+data FireIntensity = I1 | I2 | I3 | I4 | I5
+data FireAction = Grow | Spread Dir
 
 type Floor = { tiles : [[FloorTile]]
              , objects : Dict ObjectId Object
+             , lastObjectId : ObjectId
              , floorId : FloorId
              }
 
@@ -31,6 +33,7 @@ data TransitionReason = UsingStairs StairsDir
 type GameState = { floors : Zipper Floor
                  , player : Player
                  , transition : Maybe Transition
+                 , randomState : Int
                  }
 
-data GameInput = Move Dir | TimeStep Time
+data GameInput = Move Dir | TimeStep Time | SetRandomSeed Int

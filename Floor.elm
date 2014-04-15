@@ -33,7 +33,11 @@ groundFloor =
       cols2 = repeat width colWithObstacle
       cols3 = repeat (dimensions.x - x - width) fullCol
     in
-      { floorId = "G", tiles = cols1 ++ cols2 ++ cols3, objects = D.empty }
+      { floorId = "G"
+      , tiles = cols1 ++ cols2 ++ cols3
+      , objects = D.empty
+      , lastObjectId = 0
+      }
 
 firstFloor : Floor
 firstFloor =
@@ -54,7 +58,11 @@ firstFloor =
       cols2 = repeat width colWithObstacle
       cols3 = repeat (dimensions.x - x - width) fullCol
     in
-      { floorId = "1", tiles = cols1 ++ cols2 ++ cols3, objects = D.empty }
+      { floorId = "G"
+      , tiles = cols1 ++ cols2 ++ cols3
+      , objects = D.empty
+      , lastObjectId = 0
+      }
 
 initialFloors = Z [] groundFloor [firstFloor]
 
