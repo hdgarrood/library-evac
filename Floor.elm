@@ -31,7 +31,7 @@ groundFloor =
       cols2 = repeat width colWithObstacle
       cols3 = repeat (dimensions.x - x - width) fullCol
     in
-      { tiles = cols1 ++ cols2 ++ cols3, objects = [] }
+      { label = "G", tiles = cols1 ++ cols2 ++ cols3, objects = [] }
 
 firstFloor : Floor
 firstFloor =
@@ -52,7 +52,7 @@ firstFloor =
       cols2 = repeat width colWithObstacle
       cols3 = repeat (dimensions.x - x - width) fullCol
     in
-      { tiles = cols1 ++ cols2 ++ cols3, objects = [] }
+      { label = "1", tiles = cols1 ++ cols2 ++ cols3, objects = [] }
 
 initialFloors = Z [] groundFloor [firstFloor]
 
@@ -125,10 +125,7 @@ onEnter tile state =
 takeStairs : StairsDir -> GameState -> GameState
 takeStairs dir state =
     let
-      f = case dir of
-        Upwards   -> advance
-        Downwards -> retreat
+      newTransition =
+        Just { remaining = 1.0, reason = UsingStairs dir, performed = False }
     in
-      case f state.floors of
-        Just floors' -> { state | floors <- floors' }
-        Nothing      -> state
+      { state | transition <- newTransition }

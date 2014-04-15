@@ -9,7 +9,17 @@ data Dir = Left | Right | Up | Down
 data FloorTile = Normal | Inaccessible | Stairs StairsDir
 data StairsDir = Upwards | Downwards
 type Object = Positioned {}
-type Floor = { tiles : [[FloorTile]], objects : [Object] }
+type Floor = { tiles : [[FloorTile]], objects : [Object], label : String }
 
-type GameState = {floors : Zipper Floor, player : Player}
-type GameInput = {dir : Dir}
+type Transition = { reason : TransitionReason
+                  , performed : Bool
+                  , remaining : Time
+                  }
+data TransitionReason = UsingStairs StairsDir
+
+type GameState = { floors : Zipper Floor
+                 , player : Player
+                 , transition : Maybe Transition
+                 }
+
+data GameInput = Move Dir | TimeStep Time

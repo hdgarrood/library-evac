@@ -15,8 +15,8 @@ retreat (Z preds x succs) = case preds of
 current : Zipper a -> a
 current (Z _ x _) = x
 
-update : Zipper a -> a -> Zipper a
-update (Z preds _ succs) z = Z preds z succs
+setCurrent : Zipper a -> a -> Zipper a
+setCurrent (Z preds _ succs) z = Z preds z succs
 
 (!!) : [a] -> Int -> Maybe a
 xs !! i = case xs of

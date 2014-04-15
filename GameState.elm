@@ -7,18 +7,87 @@ import Floor as F
 import Types (..)
 
 initialState : GameState
-initialState = {player = Player { x=0, y=0 }, floors = F.initialFloors}
+initialState = { player = Player { x=0, y=0 }
+               , floors = F.initialFloors
+               , transition = Nothing
+               }
+
+inTransition : GameState -> Bool
+inTransition state = isJust state.transition
+
+getTransitionOverlay : GameState -> Element
+getTransitionOverlay state =
+    let
+      x = F.size |> .x
+      y = F.size |> .y
+      overlay t = spacer x y |> color black |> opacity (getOpacity t)
+    in
+      case state.transition of
+        Just t  -> overlay t
+        Nothing -> empty
+
+getOpacity : Transition -> Float
+getOpacity t = 1 - abs (t.remaining - 0.5)
 
 step : GameInput -> GameState -> GameState
-step input state = state |> preMoveHooks input
-                         |> movePlayer input
-                         |> postMoveHooks input
+step input state =
+    if inTransition state
+      then case input of
+        TimeStep delta -> stepTransition delta state
+        _ -> state
+      else case input of
+        Move dir -> state |> preMoveHooks input
+                          |> movePlayer dir
+                          |> postMoveHooks input
+        _ -> state
+
+transitionLength = 1.0
+
+stepTransition : Time -> GameState -> GameState
+stepTransition delta state =
+    let
+      newTime rem = rem - (inSeconds delta / transitionLength)
+
+      newTransition transition rem' =
+        if rem' <= 0
+          then Nothing
+          else Just { transition | remaining <- rem' }
+
+      newState transition =
+        let
+          rem' = newTime transition.remaining
+          state' = { state | transition <- newTransition transition rem' }
+        in
+          if rem' <= 0.5 && not transition.performed
+            then state' |> updateForReason transition.reason |> markPerformed
+            else state'
+
+      markPerformed state =
+        case state.transition of
+          Just t -> { state | transition <- Just { t | performed <- True } }
+          Nothing -> state
+    in
+      case state.transition of
+        Just t -> newState t
+        Nothing -> state
+
+updateForReason : TransitionReason -> GameState -> GameState
+updateForReason reason state = case reason of
+    UsingStairs dir ->
+      let
+        f = case dir of
+          Upwards   -> E.advance
+          Downwards -> E.retreat
+      in
+        case f state.floors of
+          Just floors' -> { state | floors <- floors' }
+          Nothing      -> state
 
 currentFloor : GameState -> Floor
 currentFloor state = E.current state.floors
 
-movePlayer : GameInput -> GameState -> GameState
-movePlayer {dir} state =
+movePlayer : Dir -> GameState -> GameState
+movePlayer dir state =
     let
       floor  = currentFloor state
       player = state.player
@@ -59,5 +128,5 @@ canMove floor player dir =
     in
       F.occupiableAt floor newpos
 
-state : Signal GameInput -> Signal GameState
-state input = foldp step initialState input
+makeState : Signal GameInput -> Signal GameState
+makeState input = foldp step initialState input
