@@ -98,13 +98,10 @@ updateForReason reason state = case reason of
           Just floors' -> { state | floors <- floors' }
           Nothing      -> state
 
-currentFloor : GameState -> Floor
-currentFloor state = Zipper.current state.floors
-
 movePlayer : Dir -> GameState -> GameState
 movePlayer dir state =
     let
-      floor  = currentFloor state
+      floor  = F.currentFloor state
       player = state.player
       pos    = unplayer player
       newpos = G.moveDir dir pos
@@ -118,7 +115,7 @@ getTileUnderPlayer state =
     let
       pos = unplayer state.player
     in
-      case F.tileAt (currentFloor state) pos of
+      case F.tileAt (F.currentFloor state) pos of
         Just t  -> t
         Nothing -> Normal -- HACK
 
@@ -156,20 +153,18 @@ stepObjects state =
 getUnsteppedObject : GameState -> Maybe (FloorId, ObjectId)
 getUnsteppedObject state =
     let
-      floorIds = getFloorIds state
+      floorIds = F.getFloorIds state.floors
     in
       case concatMap (getUnsteppedObjects state) floorIds of
         x::_ -> Just x
         []   -> Nothing
 
-getFloorIds : GameState -> [FloorId]
-getFloorIds state =
-    Zipper.values state.floors |> map .floorId
-
-getFloorById : GameState -> FloorId -> Maybe Floor
-getFloorById state floorId =
-    Zipper.values state.floors |> filter (\f -> f.floorId == floorId)
-                               |> safeHead
+modifyFloor : GameState -> FloorId -> (Floor -> Floor) -> GameState
+modifyFloor state floorId f =
+    case F.getFloor floorId state.floors of
+      Just floor ->
+        { state | floors <- F.modifyFloor floorId f state.floors }
+      Nothing -> state
 
 getObjectById : GameState -> ObjectId -> Maybe Object
 getObjectById state objId =
@@ -177,25 +172,25 @@ getObjectById state objId =
                 Just y  -> [y]
                 Nothing -> []
     in
-      Zipper.values state.floors
+      Dict.values state.floors.dict
         |> concatMap (\f -> f.objects |> Dict.lookup objId |> l)
         |> safeHead
 
 getUnsteppedObjects : GameState -> FloorId -> [(FloorId, ObjectId)]
 getUnsteppedObjects state floorId =
-    case getFloorById state floorId of
-      Just {tiles, objects, floorId} ->
-        objects |> Dict.filter (not . .stepped)
-                |> Dict.keys
-                |> map (\objId -> (floorId, objId))
+    case F.getFloor floorId state.floors of
+      Just floor ->
+        floor.objects |> Dict.filter (not . .stepped)
+                      |> Dict.keys
+                      |> map (\objId -> (floorId, objId))
       Nothing -> []
 
 stepObject : GameState -> FloorId -> ObjectId -> Random GameState
 stepObject state floorId objId =
     case getObjectById state objId of
       Just obj -> case obj.typ of
-        Fire _ -> stepFireObject state floorId obj
-        Person -> stepPersonObject state floorId obj
+        Fire _ -> stepFireObject state floorId objId
+        Person -> stepPersonObject state floorId objId
       Nothing -> pure state
 
 fmap : (a -> b) -> Random a -> Random b
@@ -207,12 +202,38 @@ randomInt = fmap head <| randomInts 1
 randomFloat : Random Float
 randomFloat = fmap head <| randomFloats 1
 
-stepFireObject : GameState -> FloorId -> Object -> Random GameState
-stepFireObject state floorId obj =
+randomRange : (Int, Int) -> Random Int
+randomRange range = fmap head <| Pseudorandom.randomRange range 1
+
+stepFireObject : GameState -> FloorId -> ObjectId -> Random GameState
+stepFireObject state floorId objId =
   let
-    f _ = state -- TODO
+    toDir x = case x of
+                 0 -> Up
+                 1 -> Left
+                 2 -> Down
+                 3 -> Right
+                 _ -> Up
+    -- TODO: Intensity should affect likelihood of action
+    action r = if | r < 20 -> Just <| Spread <| toDir <| r `div` 5
+                  | r < 30 -> Just Grow
+                  | otherwise -> Nothing
+    f r = case action r of
+        Just a -> applyFireAction state floorId objId a
+        Nothing -> state
   in
-    fmap f randomInt
+    fmap f <| randomRange (0,99)
+
+grow : FireIntensity -> FireIntensity
+grow i = case i of
+    I1 -> I2
+    I2 -> I3
+    I3 -> I4
+    I4 -> I5
+    I5 -> I5
+
+applyFireAction : GameState -> FloorId -> ObjectId -> FireAction -> GameState
+applyFireAction state floorId objId action = state
 
 -- TODO
 stepPersonObject = stepFireObject

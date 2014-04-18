@@ -18,8 +18,9 @@ data FireAction = Grow | Spread Dir
 type Floor = { tiles : [[FloorTile]]
              , objects : Dict ObjectId Object
              , lastObjectId : ObjectId
-             , floorId : FloorId
              }
+
+type FloorCollection = { dict : Dict FloorId Floor, zipper : Zipper FloorId }
 
 type ObjectId = Int
 type FloorId = String
@@ -30,7 +31,7 @@ type Transition = { reason : TransitionReason
                   }
 data TransitionReason = UsingStairs StairsDir
 
-type GameState = { floors : Zipper Floor
+type GameState = { floors : FloorCollection
                  , player : Player
                  , transition : Maybe Transition
                  , randomState : Int

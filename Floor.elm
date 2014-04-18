@@ -2,9 +2,10 @@ module Floor where
 
 import Types (..)
 import ListExtra ((!!))
-import Zipper (Z, advance, retreat)
+import Zipper (Z, advance, retreat, current)
 import Geometry as G
-import Dict as D
+import Dict
+import Native.Error
 
 -- Should both be odd (for now)
 dimensions : { x:Int, y:Int }
@@ -33,9 +34,8 @@ groundFloor =
       cols2 = repeat width colWithObstacle
       cols3 = repeat (dimensions.x - x - width) fullCol
     in
-      { floorId = "G"
-      , tiles = cols1 ++ cols2 ++ cols3
-      , objects = D.empty
+      { tiles = cols1 ++ cols2 ++ cols3
+      , objects = Dict.empty
       , lastObjectId = 0
       }
 
@@ -58,13 +58,41 @@ firstFloor =
       cols2 = repeat width colWithObstacle
       cols3 = repeat (dimensions.x - x - width) fullCol
     in
-      { floorId = "G"
-      , tiles = cols1 ++ cols2 ++ cols3
-      , objects = D.empty
+      { tiles = cols1 ++ cols2 ++ cols3
+      , objects = Dict.empty
       , lastObjectId = 0
       }
 
-initialFloors = Z [] groundFloor [firstFloor]
+initialFloors : FloorCollection
+initialFloors = { dict = Dict.fromList [("G", groundFloor), ("1", firstFloor)]
+                , zipper = Z [] "G" ["1"]
+                }
+
+getFloor : FloorId -> FloorCollection -> Maybe Floor
+getFloor floorId coll = Dict.lookup floorId coll.dict
+
+modifyFloor : FloorId -> (Floor -> Floor) -> FloorCollection -> FloorCollection
+modifyFloor floorId f coll =
+    let
+      liftMaybe f x = case x of
+        Just y -> Just (f y)
+        Nothing -> Nothing
+    in
+      { coll | dict <- Dict.update floorId (liftMaybe f) coll.dict }
+
+getFloorIds : FloorCollection -> [FloorId]
+getFloorIds coll = Dict.keys coll.dict
+
+currentFloor : FloorCollection -> Floor
+currentFloor coll =
+    let
+      currentId : String
+      currentId = current coll.zipper
+    in
+      case Dict.lookup currentId coll.dict of
+        Just f -> f
+        Nothing -> Native.Error.error <|
+                    "currentFloor: floor not found with id " ++ currentId ++ "."
 
 occupiable : FloorTile -> Bool
 occupiable t = case t of
