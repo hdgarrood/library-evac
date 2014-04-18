@@ -1,4 +1,4 @@
-{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE ExistentialQuantification, TypeSynonymInstances, FlexibleInstances #-}
 module Types where
 
 import Control.Arrow ((***))
@@ -18,8 +18,13 @@ class VecLike a where
     getVec :: a -> Vec
     setVec :: Vec -> a -> a
 
-newtype Vec = Vec { unVec :: (Int, Int) }
-    deriving (Show, Eq, Ord)
+    getX :: a -> Int
+    getX = fst . getVec
+
+    getY :: a -> Int
+    getY = snd . getVec
+
+type Vec = (Int, Int)
 
 instance VecLike Vec where
     getVec = id
