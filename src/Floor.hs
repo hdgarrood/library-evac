@@ -1,6 +1,7 @@
 module Floor where
 
 import Control.Arrow
+import qualified Data.Map as Map
 
 import Types
 import Zipper
@@ -13,28 +14,33 @@ tileSize :: Int
 tileSize = 32
 
 canvasSize :: Vec
-canvasSize = both (* tileSize) dimensions 
+canvasSize = both (* tileSize) dimensions
     where both f = f *** f
 
 groundFloor :: Floor
-groundFloor = Floor { floorTiles = cols1 ++ cols2 ++ cols3
-                    , floorObjects = Dict.empty
-                    , floorLastObjectId = 0
-                    }
-    where
-    x = 7
-    width = 4
-    y = 9
-    height = 4
-    fullCol = repeat dimensions.y Normal
-    colWithStairs = repeat 3 Normal ++
-                      [Stairs Upwards] ++
-                      repeat (dimensions.y - 4) Normal
-    colWithObstacle = repeat y Normal ++
-                      repeat height Inaccessible ++
-                      repeat (dimensions.y - height - y) Normal
+groundFloor = makeEmptyFloor $ makeCols 7 9 4 4 3 Upwards
 
-    cols1 = fullCol :: colWithStairs :: repeat (x-2) fullCol
-    cols2 = repeat width colWithObstacle
-    cols3 = repeat (dimensions.x - x - width) fullCol
-    
+firstFloor :: Floor
+firstFloor = makeEmptyFloor $ makeCols 2 7 4 4 3 Downwards
+
+makeEmptyFloor :: [[FloorTile]] -> Floor
+makeEmptyFloor tiles = Floor
+    { floorTiles = tiles
+    , floorObjects = Map.empty
+    , floorLastObjectId = ObjectId 0
+    }
+
+makeCols :: Int -> Int -> Int -> Int -> Int -> StairsDir -> [[FloorTile]]
+makeCols x y width height stairsY stairsDir = cols1 ++ cols2 ++ cols3
+    where
+    fullCol = replicate (getY dimensions) Normal
+    colWithStairs = replicate stairsY Normal ++
+                      [Stairs stairsDir] ++
+                      replicate (getY dimensions - 4) Normal
+    colWithObstacle = replicate y Normal ++
+                      replicate height Inaccessible ++
+                      replicate (getY dimensions - height - y) Normal
+
+    cols1 = fullCol : colWithStairs : replicate (x-2) fullCol
+    cols2 = replicate width colWithObstacle
+    cols3 = replicate (getX dimensions - x - width) fullCol
