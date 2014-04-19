@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Floor where
 
 import Control.Arrow
@@ -22,6 +24,12 @@ groundFloor = makeEmptyFloor $ makeCols 7 9 4 4 3 Upwards
 
 firstFloor :: Floor
 firstFloor = makeEmptyFloor $ makeCols 2 7 4 4 3 Downwards
+
+initialFloors :: FloorCollection
+initialFloors = FloorCollection
+    { collectionFloors = Map.fromList [("G", groundFloor), ("1", firstFloor)]
+    , collectionZipper = Z [] "G" ["1"]
+    }
 
 makeEmptyFloor :: [[FloorTile]] -> Floor
 makeEmptyFloor tiles = Floor

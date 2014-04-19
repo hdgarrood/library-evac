@@ -1,8 +1,9 @@
-{-# LANGUAGE ExistentialQuantification, TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE ExistentialQuantification, TypeSynonymInstances, FlexibleInstances, GeneralizedNewtypeDeriving #-}
 module Types where
 
 import Control.Arrow ((***))
 import Data.Map (Map)
+import Data.String (IsString)
 import Data.Time.Clock (DiffTime)
 import Control.Monad.Random (Rand)
 import Control.Monad.Trans.Reader (ReaderT)
@@ -79,7 +80,7 @@ data FloorCollection = FloorCollection
 newtype ObjectId = ObjectId Int
     deriving (Show, Eq, Ord)
 newtype FloorId = FloorId String
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, IsString)
 
 data Transition = Transition
     { transitionReason :: TransitionReason
