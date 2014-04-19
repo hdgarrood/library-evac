@@ -99,7 +99,7 @@ data GameState = GameState
     { stateFloors :: FloorCollection
     , statePlayer :: Player
     , stateTransition :: Maybe Transition
-    , stateRandom :: StdGen
+    , stateStdGen :: StdGen
     }
 
 data GameInput = MovePlayer Dir | TimeStep DiffTime | SetRandomSeed Int
