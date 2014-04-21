@@ -5,8 +5,8 @@ import Control.Arrow ((***))
 import Data.Map (Map)
 import Data.String (IsString)
 import Data.Time.Clock (DiffTime)
-import Control.Monad.Random (Rand)
-import Control.Monad.Trans.Reader (ReaderT)
+import Control.Monad.Random (Rand, runRand)
+import Control.Monad.Trans.Reader (ReaderT, runReaderT)
 import System.Random (StdGen)
 
 data Zipper a = Z [a] a [a]
@@ -102,7 +102,7 @@ data GameState = GameState
     , stateStdGen :: StdGen
     }
 
-data GameInput = MovePlayer Dir | TimeStep DiffTime | SetRandomSeed Int
+data GameInput = MovePlayer Dir | StepTransition
     deriving (Show, Eq)
 
 data GameReader = GameReader
@@ -111,5 +111,12 @@ data GameReader = GameReader
     }
 
 newtype GameM a = GameM
-    { unGameM :: ReaderT GameReader (Rand Int) a
+    { unGameM :: ReaderT GameReader (Rand StdGen) a
     }
+
+runGameM :: GameInput -> GameState -> GameM a -> (a, GameState)
+runGameM input state action = (result, state')
+    where
+    reader = runReaderT (unGameM action) (GameReader state input)
+    (result, gen) = runRand reader (stateStdGen state)
+    state' = state { stateStdGen = gen }
